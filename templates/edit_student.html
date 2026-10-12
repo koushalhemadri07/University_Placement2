@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Student</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <h1>Edit Student Details</h1>
+
+    <form method="POST">
+        <label>Roll Number</label><br>
+        <input name="roll_number"
+               value="{{ student.roll_number }}" required><br><br>
+
+        <label>Full Name</label><br>
+        <input name="full_name"
+               value="{{ student.full_name }}" required><br><br>
+
+        <label>Email</label><br>
+        <input type="email" name="email"
+               value="{{ student.email }}" required><br><br>
+
+        <label>Department</label><br>
+        <select name="department_id" required>
+            {% for department in departments %}
+                <option value="{{ department.id }}"
+                    {% if department.id == student.department_id %}
+                        selected
+                    {% endif %}>
+                    {{ department.name }}
+                </option>
+            {% endfor %}
+        </select><br><br>
+
+        <label>CGPA</label><br>
+        <input type="number" name="cgpa" min="0" max="10"
+               step="0.01" value="{{ student.cgpa }}" required><br><br>
+
+        <button type="submit">Save Changes</button>
+        <a href="{{ url_for('students_page') }}">Cancel</a>
+    </form>
+</body>
+</html>

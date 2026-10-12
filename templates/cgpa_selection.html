@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGPA-Based Student Selection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f6f9;
+            color: #222;
+        }
+
+```
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+    }
+
+    h1, h2 {
+        color: #17365d;
+    }
+
+    .filter {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #eef3f8;
+        border-radius: 8px;
+    }
+
+    input[type="number"] {
+        padding: 9px;
+        width: 100px;
+    }
+
+    button {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 5px;
+        background: #1769aa;
+        color: white;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th, td {
+        padding: 11px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    th {
+        background: #17365d;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background: #f5f7fa;
+    }
+
+    .error {
+        color: #b00020;
+        font-weight: bold;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+    }
+</style>
+```
+
+</head>
+<body>
+<div class="container">
+    <h1>CGPA-Based Student Selection</h1>
+
+```
+<p>
+    Department filter: <strong>All Departments</strong><br>
+    Selection condition: <strong>CGPA strictly greater than the threshold</strong>
+</p>
+
+{% if error %}
+    <p class="error">{{ error }}</p>
+{% endif %}
+
+<form method="POST">
+    <div class="filter">
+        <label for="threshold"><strong>Minimum CGPA threshold:</strong></label>
+        <input
+            type="number"
+            id="threshold"
+            name="threshold"
+            min="0"
+            max="10"
+            step="0.01"
+            value="{{ threshold }}"
+            required
+        >
+        <p>For example, entering 8.0 displays students with CGPA above 8.0, not equal to 8.0.</p>
+    </div>
+
+    <h2>Eligible Students ({{ eligible_students|length }})</h2>
+
+    {% if eligible_students %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Email</th>
+                    <th>CGPA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in eligible_students %}
+                <tr>
+                    <td>
+                        <input
+                            type="checkbox"
+                            name="student_ids"
+                            value="{{ student.id }}"
+                            {% if student.id|string in request.form.getlist('student_ids') %}
+                                checked
+                            {% endif %}
+                        >
+                    </td>
+                    <td>{{ student.roll_number }}</td>
+                    <td>{{ student.full_name }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ "%.2f"|format(student.cgpa) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit">Show Selected Students</button>
+    {% else %}
+        <p>No students match this CGPA threshold.</p>
+    {% endif %}
+</form>
+
+{% if request.method == "POST" %}
+    <hr>
+    <h2>Selected Students ({{ selected_students|length }})</h2>
+
+    {% if selected_students %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>CGPA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in selected_students %}
+                <tr>
+                    <td>{{ student.roll_number }}</td>
+                    <td>{{ student.full_name }}</td>
+                    <td>{{ "%.2f"|format(student.cgpa) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have not selected any eligible students.</p>
+    {% endif %}
+{% endif %}
+
+<a class="back-link" href="{{ url_for('index') }}">Back to Home</a>
+```
+
+</div>
+</body>
+</html>
