@@ -1,6 +1,8 @@
 from datetime import date, datetime
 import csv
 import io
+import os
+import secrets
 
 from flask import (
     Flask, render_template_string, request,
@@ -21,8 +23,10 @@ from functools import wraps
 
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = "replace-this-with-a-long-random-secret"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placement.db"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", "sqlite:///placement.db"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -322,19 +326,27 @@ def seed_demo_data():
 
 
 def seed_login_accounts():
-    # Create the demo administrator only if it does not already exist.
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    student_password = os.environ.get("STUDENT_PASSWORD")
+
+    if not admin_password or not student_password:
+        raise RuntimeError(
+            "Set ADMIN_PASSWORD and STUDENT_PASSWORD before starting the app."
+        )
+
     admin_email = "admin@university.local"
 
     admin = User.query.filter_by(username=admin_email).first()
 
     if admin is None:
-        db.session.add(
-            User(
-                username=admin_email,
-                password_hash=generate_password_hash("AdminDemo@123"),
-                role="admin"
-            )
+        admin = User(
+            username=admin_email,
+            password_hash="",
+            role="admin"
         )
+        db.session.add(admin)
+
+    admin.password_hash = generate_password_hash(admin_password)
 
     # Create a student login linked to the first demo student.
     student = Student.query.filter_by(email="demo001@example.com").first()
@@ -345,16 +357,23 @@ def seed_login_accounts():
         ).first()
 
         if student_user is None:
-            db.session.add(
-                User(
-                    username=student.email,
-                    password_hash=generate_password_hash("StudentDemo@123"),
-                    role="student",
-                    student_id=student.id
-                )
+            student_user = User(
+                username=student.email,
+                password_hash="",
+                role="student",
+                student_id=student.id
             )
+            db.session.add(student_user)
+
+        student_user.password_hash = generate_password_hash(student_password)
 
     db.session.commit()
+
+
+with app.app_context():
+    db.create_all()
+    seed_demo_data()
+    seed_login_accounts()
 
 
 # =========================================================
@@ -1591,9 +1610,8 @@ def db_check():
 # =========================================================
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        seed_demo_data()
-        seed_login_accounts()
-
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False
+    )
